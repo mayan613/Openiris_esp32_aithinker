@@ -17,7 +17,7 @@ const uint16_t CONFIG_PORT = 8080;  // ← 这里修改
 const char ap_config_html[] PROGMEM = R"rawliteral(
 <!DOCTYPE html>
 <html>
-<head><title>OpenIris 配网</title><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<head><meta charset="utf-8"><title>OpenIris 配网</title><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="font-family:Arial;text-align:center;padding:40px;">
   <h1>OpenIris 首次配网</h1>
   <p>请输入你的家用 WiFi</p>
@@ -35,7 +35,7 @@ const char ap_config_html[] PROGMEM = R"rawliteral(
 const char sta_config_html[] PROGMEM = R"rawliteral(
 <!DOCTYPE html>
 <html>
-<head><title>OpenIris 配置</title><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<head><meta charset="utf-8"><title>OpenIris 配置</title><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="font-family:Arial;text-align:center;padding:40px;">
   <h1>OpenIris WiFi 配置</h1>
   <p><b>当前已连接：</b> %CURRENT_SSID%</p>
@@ -142,7 +142,7 @@ void setupConfigServer(bool isAP) {
       deviceConfig.setWifiConfig("main", ssid.c_str(), pass.c_str(), 0, 52,
                                  false, true);
 
-      request->send(200, "text/plain", "配置已保存！设备即将重启...");
+      request->send(200, "text/plain, charset=utf-8", "配置已保存！设备即将重启...");
       delay(2500);
       ESP.restart();
     }
