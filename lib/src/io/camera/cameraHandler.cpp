@@ -66,22 +66,30 @@ void CameraHandler::setupBasicResolution() {
   config.frame_size = CAM_RESOLUTION;
 
   if (!psramFound()) {
-    log_e("[Camera]: Did not find psram, setting lower image quality");
+    log_e("[Camera]: 没有找到psram,正在设置更低的图形质量以适应内存限制!");
+    Serial.println("❌ PSRAM初始化失败 ");
+    Serial.println("可能的原因:");
+    Serial.println("1. 你的ESP32开发板没有psram芯片,或者psram芯片损坏");
+    Serial.println("2. 你的ESP32开发板没有正确连接psram芯片,或者供电不足");
+    Serial.println("3. platformio.ini 中的板子设置错误");
     config.fb_location = CAMERA_FB_IN_DRAM;
     config.jpeg_quality = 9;
     config.fb_count = 2;
     return;
   }
 
-  log_d("[Camera]: Found psram, setting the higher image quality");
+  log_d("[Camera]: 找到psram,正在设置更高的图像质量");
+  log_d("✅ PSRAM初始化成功 ");
+  log_d("PSRAM总大小 : %d KB\n", ESP.getPsramSize() / 1024);
+  log_d("剩余的PSRAM空间 : %d KB\n", ESP.getFreePsram() / 1024);
   config.jpeg_quality = 7;  // 0-63 lower number = higher quality, more latency
                             // and less fps   7 for most fps, 5 for best quality
   config.fb_count = 3;
-  log_d("[Camera]: Setting fb_location to CAMERA_FB_IN_PSRAM");
+  log_d("[Camera]: 将fb_location设置为CAMERA_FB_IN_PSRAM");
 }
 
 void CameraHandler::setupCameraSensor() {
-  log_d("[Camera]: Setting up camera sensor");
+  log_d("[Camera]: 设置相机传感器中...");
 
   camera_sensor = esp_camera_sensor_get();
   // fixes corrupted jpegs, https://github.com/espressif/esp32-camera/issues/203

@@ -234,6 +234,12 @@ void setup() {
   Serial.begin(115200);
   Logo::printASCII();
   ledManager.begin();
+  //开始时打印psram和ram的使用情况，帮助用户了解内存使用情况和剩余空间，方便调试和优化
+  if(psramFound()) {
+    log_d("PSRAM使用情况: 已使用 %d KB, 剩余 %d KB", (ESP.getPsramSize() - ESP.getFreePsram()) / 1024, ESP.getFreePsram() / 1024);
+  }
+  //输出ram的使用情况，帮助用户了解ram的使用情况和剩余空间，方便调试和优化
+  log_d("RAM使用情况: 已使用 %d KB, 剩余 %d KB", (ESP.getHeapSize() - ESP.getFreeHeap()) / 1024, ESP.getFreeHeap() / 1024);
 
 #ifdef CONFIG_CAMERA_MODULE_SWROOM_BABBLE_S3  // Set IR emitter strength to
                                               // 100%.
@@ -268,4 +274,14 @@ void loop() {
   if (isInAPMode) {
     dnsServer.processNextRequest();
   }
+  // psram和ram使用情况日志输出（每5秒输出一次，帮助用户了解内存使用情况，方便调试和优化）
+  // 注意：频繁地输出日志可能会增加CPU占用，影响性能，所以我们设置为每5秒输出一次，如果你需要更频繁的日志输出，可以将这个时间间隔调整为更短的时间，但请注意可能会对性能产生影响
+  // 仅供调试使用，正式使用时建议注释掉这些日志输出以减少CPU占用和日志干扰，防止delay函数导致正常功能的延迟，如果你需要持续监控内存使用情况，建议使用专业的监控工具或者在特定的调试阶段启用这些日志输出。
+  // delay(5000);  // 减少CPU占用，避免过度频繁地处理LED和串口任务
+  // //添加函数不断读取psram状态并打印日志，帮助用户了解psram的使用情况和剩余空间，方便调试和优化
+  // if(psramFound()) {
+  //   log_d("PSRAM使用情况: 已使用 %d KB, 剩余 %d KB", (ESP.getPsramSize() - ESP.getFreePsram()) / 1024, ESP.getFreePsram() / 1024);
+  // }
+  // //输出ram的使用情况，帮助用户了解ram的使用情况和剩余空间，方便调试和优化
+  // log_d("RAM使用情况: 已使用 %d KB, 剩余 %d KB", (ESP.getHeapSize() - ESP.getFreeHeap()) / 1024, ESP.getFreeHeap() / 1024);
 }
