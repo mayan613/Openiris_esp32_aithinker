@@ -171,6 +171,17 @@ void setupWebLogServer()
 
   log_d("[LOG] Web 日志服务器已启动 → http://设备IP:%d", LOG_PORT);
   log_d("[LOG] Web Log Server initialized on port %d", LOG_PORT);
+
+  // ====================== 连接日志回调到 Web 日志服务器 ======================
+  serialManager.setLogCallback([](const String &msg) {
+      if (events != nullptr && msg.length() > 0) {
+          String cleanMsg = msg;
+          cleanMsg.trim();
+          if (cleanMsg.length() > 0) {
+              events->send(cleanMsg.c_str());
+          }
+      }
+  });
 }
 
 
@@ -277,16 +288,7 @@ void setup()
   deviceConfig.load();
 
   serialManager.init();
-  // ====================== 连接日志回调到 Web 日志服务器 ======================
-  serialManager.setLogCallback([](const String &msg) {
-      if (events != nullptr && msg.length() > 0) {
-          String cleanMsg = msg;
-          cleanMsg.trim();
-          if (cleanMsg.length() > 0) {
-              events->send(cleanMsg.c_str());
-          }
-      }
-  });
+  // 移除这里的setLogCallback，移到Web服务器启动后
 
 
 #ifndef ETVR_EYE_TRACKER_USB_API
