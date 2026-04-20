@@ -4,7 +4,7 @@ CommandManager::CommandManager(ProjectConfig* deviceConfig)
     : deviceConfig(deviceConfig) {}
 
 const CommandType CommandManager::getCommandType(JsonVariant& command) {
-  if (!command.containsKey("command"))
+  if (!command["command"].isNull())
     return CommandType::None;
 
   if (auto search = commandMap.find(command["command"]);
@@ -15,11 +15,11 @@ const CommandType CommandManager::getCommandType(JsonVariant& command) {
 }
 
 bool CommandManager::hasDataField(JsonVariant& command) {
-  return command.containsKey("data");
+  return !command["data"].isNull();
 }
 
 void CommandManager::handleCommands(CommandsPayload commandsPayload) {
-  if (!commandsPayload.data.containsKey("commands")) {
+  if (!commandsPayload.data["commands"].isNull()) {
     log_e("Json data sent not supported, lacks commands field");
     return;
   }
@@ -41,12 +41,12 @@ void CommandManager::handleCommand(JsonVariant command) {
         // malformed command, lacked data field
         break;
 
-      if (!command["data"].containsKey("ssid") ||
-          !command["data"].containsKey("password"))
+      if (!command["data"]["ssid"].isNull() ||  // 替换containsKey
+          !command["data"]["password"].isNull())
         break;
 
       std::string customNetworkName = "main";
-      if (command["data"].containsKey("network_name"))
+      if (!command["data"]["network_name"].isNull())
         customNetworkName = command["data"]["network_name"].as<std::string>();
 
       this->deviceConfig->setWifiConfig(customNetworkName,
@@ -62,7 +62,7 @@ void CommandManager::handleCommand(JsonVariant command) {
       if (!this->hasDataField(command))
         break;
 
-      if (!command["data"].containsKey("hostname") ||
+      if (!command["data"]["hostname"].isNull() ||
           !strlen(command["data"]["hostname"]))
         break;
 

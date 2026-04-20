@@ -1,6 +1,7 @@
 #include <DNSServer.h>
 #include <WiFi.h>
 #include <openiris.hpp>
+#include "html_content.h"  // 包含HTML内容的头文件，用户可以在这个文件中修改HTML内容来定制配网页面
 
 // 自定义代码区
 DNSServer dnsServer;
@@ -27,53 +28,15 @@ const bool ENABLE_ADHOC = false;  // ← 不建议修改，请看注意事项
 // 注意：本自定义项目已经和这个功能类似，不建议用户将其设置为True，以免与我们的配网功能冲突，如果你确实需要这个功能，请确保理解它的工作原理，并且做好调试准备
 
 //官方adhoc功能相关参数（不建议用户修改，除非你需要使用官方的配网功能，并且理解它的工作原理）
-//这些代码是给adhoc定义可以编辑的变量,这些变量会在wifihandler.cpp中被使用到，以确保当用户启用adhoc模式时能够正确设置AP的参数
-extern char* ADHOC_AP_SSID;
-extern char* ADHOC_AP_PASSWORD;
-extern uint8_t ADHOC_AP_CHANNEL;
+//这些代码是给adhoc声明变量,这些变量会在wifihandler.cpp中被使用到，以确保当用户启用adhoc模式时能够正确设置AP的参数
+extern const char* ADHOC_AP_SSID;
+extern const char* ADHOC_AP_PASSWORD;
+extern const uint8_t ADHOC_AP_CHANNEL;
 //adhoc功能相关参数定义（不建议用户修改，除非你需要使用官方的配网功能，并且理解它的工作原理）
-char* ADHOC_AP_SSID = "Galeros_ESP32"; // adhoc模式下的AP SSID
-char* ADHOC_AP_PASSWORD = "Galeros_ESP32"; // adhoc模式下的AP密码
-uint8_t ADHOC_AP_CHANNEL = 1; // adhoc模式下的AP频道
+const char* ADHOC_AP_SSID = "Galeros_ESP32"; // adhoc模式下的AP SSID
+const char* ADHOC_AP_PASSWORD = "Galeros_ESP32"; // adhoc模式下的AP密码
+const uint8_t ADHOC_AP_CHANNEL = 1; // adhoc模式下的AP频道
 
-
-const char ap_config_html[] PROGMEM = R"rawliteral(
-<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><title>OpenIris 配网</title><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="font-family:Arial;text-align:center;padding:40px;">
-  <h1>OpenIris 首次配网</h1>
-  <p>请输入你的家用 WiFi</p>
-  <p>由彩咖工作室(Galeros Studio)提供支持</p>
-  <form action="/save" method="POST">
-    SSID: <input type="text" name="ssid" style="width:280px" required><br><br>
-    Password: <input type="password" name="password" style="width:280px"><br><br>
-    <input type="submit" value="保存并重启" style="padding:12px 30px;font-size:18px;">
-  </form>
-</body>
-</html>
-)rawliteral";
-
-// 已连接WiFi时的管理页面（显示当前网络 + 修改按钮）
-const char sta_config_html[] PROGMEM = R"rawliteral(
-<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><title>OpenIris 配置</title><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="font-family:Arial;text-align:center;padding:40px;">
-  <h1>OpenIris WiFi 配置</h1>
-  <p><b>当前已连接：</b> %CURRENT_SSID%</p>
-  <p>由彩咖工作室(Galeros Studio)提供支持</p>
-  <hr>
-  <h2>修改 WiFi 网络</h2>
-  <form action="/save" method="POST">
-    新 SSID: <input type="text" name="ssid" style="width:280px" required><br><br>
-    新 Password: <input type="password" name="password" style="width:280px"><br><br>
-    <input type="submit" value="修改并重启" style="padding:12px 30px;font-size:18px;">
-  </form>
-  <p>修改后设备将重启并尝试连接新网络</p>
-</body>
-</html>
-)rawliteral";
 
 // 自定义代码区
 class CaptiveRequestHandler : public AsyncWebHandler {
@@ -227,7 +190,7 @@ void etvr_eye_tracker_web_init() {
   configServer->begin();
 
   isInAPMode = true;
-  log_d("AP Mode + Config Portal started! Connect to 'Galeros_ESP32'");
+  log_d("AP Mode + Config Portal started! Connect to '%s'", AP_SSID);
 
   //   log_d("[SETUP]: Starting MDNS Handler");
   //   mdnsHandler.startMDNS();

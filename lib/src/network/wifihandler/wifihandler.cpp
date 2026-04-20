@@ -109,9 +109,9 @@ void WiFiHandler::adhoc(const std::string& ssid,
 
 void WiFiHandler::setUpADHOC() {
   //添加来自main函数的AP设置参数，以确保当用户启用ADHOC模式时能够正确设置AP
-  extern char* ADHOC_AP_SSID;
-  extern char* ADHOC_AP_PASSWORD;
-  extern uint8_t ADHOC_AP_CHANNEL;
+  extern const char* ADHOC_AP_SSID;
+  extern const char* ADHOC_AP_PASSWORD;
+  extern const uint8_t ADHOC_AP_CHANNEL;
 
   log_i("\n[INFO]: Setting Up Access Point...\n");
   size_t ssidLen = configManager.getAPWifiConfig().ssid.length();

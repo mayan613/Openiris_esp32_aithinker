@@ -381,7 +381,7 @@ void BaseAPI::beginOTA() {
     esp_camera_deinit();                // deinitialize the camera driver
     digitalWrite(PWDN_GPIO_NUM, HIGH);  // turn power off to camera module
 
-    AsyncWebServerResponse* response = request->beginResponse_P(
+    AsyncWebServerResponse* response = request->beginResponse(
         200, "text/html", ELEGANT_HTML, ELEGANT_HTML_SIZE);
     response->addHeader("Content-Encoding", "gzip");
     request->send(response);
