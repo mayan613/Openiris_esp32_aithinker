@@ -1,7 +1,6 @@
 #include <DNSServer.h>
 #include <WiFi.h>
 #include <openiris.hpp>
-#include <vector>
 
 // 自定义代码区
 DNSServer dnsServer;
@@ -11,8 +10,32 @@ IPAddress apIP(192, 168, 4, 1);
 AsyncWebServer* configServer = nullptr;  // 配置专用服务器
 bool isInAPMode = false;
 
+
+// 用户自定义配置修改区域
+//在我们的功能下的AP的SSID和密码配置，之所以说在我们下是因为官方项目有类似于AP配网的功能，会和我们冲突，到时候他们的那些参数我会在下面定义并使用，但用户不需要修改那些参数，用户只需要修改下面的AP_SSID和AP_PASSWORD即可（除非你使用官方的AP功能，也就是adhoc）
+const char* AP_SSID = "Galeros_ESP32"; // 这个是当设备进入AP模式时的WiFi名称，用户可以修改为自己喜欢的名字
+const char* AP_PASSWORD = "Galeros_ESP32"; // 这个是当设备进入AP模式时的WiFi密码，建议设置一个比较复杂的密码以防止他人连接你的设备，如果你不想设置密码，可以将这个参数设置为一个空字符串""，但不建议这样做，因为这会让任何人都能连接你的设备，存在安全风险
+
 // 新增：配置管理端口
 const uint16_t CONFIG_PORT = 8080;  // ← 这里修改
+// msdn的名字配置
+const char* MDNS_HOSTNAME = "Galeros-ESP32"; // 这个名字会出现在局域网设备列表中，建议修改为独一无二的名字以便识别
+// WiFi的channel配置
+const uint8_t WIFI_CHANNEL = 1;  // ← 这里修改
+// 是否启用Adhoc模式（即AP+STA模式）(官方的配网功能，注意：如果你启用了这个功能，请确保理解它的工作原理，并且做好调试准备，因为这个功能可能会和我们的配网功能起冲突喵~)
+const bool ENABLE_ADHOC = false;  // ← 不建议修改，请看注意事项
+// 注意：本自定义项目已经和这个功能类似，不建议用户将其设置为True，以免与我们的配网功能冲突，如果你确实需要这个功能，请确保理解它的工作原理，并且做好调试准备
+
+//官方adhoc功能相关参数（不建议用户修改，除非你需要使用官方的配网功能，并且理解它的工作原理）
+//这些代码是给adhoc定义可以编辑的变量,这些变量会在wifihandler.cpp中被使用到，以确保当用户启用adhoc模式时能够正确设置AP的参数
+extern char* ADHOC_AP_SSID;
+extern char* ADHOC_AP_PASSWORD;
+extern uint8_t ADHOC_AP_CHANNEL;
+//adhoc功能相关参数定义（不建议用户修改，除非你需要使用官方的配网功能，并且理解它的工作原理）
+char* ADHOC_AP_SSID = "Galeros_ESP32"; // adhoc模式下的AP SSID
+char* ADHOC_AP_PASSWORD = "Galeros_ESP32"; // adhoc模式下的AP密码
+uint8_t ADHOC_AP_CHANNEL = 1; // adhoc模式下的AP频道
+
 
 const char ap_config_html[] PROGMEM = R"rawliteral(
 <!DOCTYPE html>
@@ -91,10 +114,10 @@ CameraHandler cameraHandler(deviceConfig);
 
 #ifndef ETVR_EYE_TRACKER_USB_API
 WiFiHandler wifiHandler(deviceConfig,
-                        WIFI_SSID,
-                        WIFI_PASSWORD,
-                        WIFI_CHANNEL,
-                        ENABLE_ADHOC);
+                        "",    // 这个参数在我们新的配网方案中已经不再使用，用户需要通过网页配网界面来设置WiFi信息，这里我们保留这个参数但不使用它，以防止与配网功能冲突
+                        "", // 同上
+                        WIFI_CHANNEL,  // 在本文件最上方由用户配置，后续考虑加入网页配置界面
+                        ENABLE_ADHOC);  // 在本文件最上方由用户配置，请看注意事项
 MDNSHandler mdnsHandler(deviceConfig);
 #ifdef SIM_ENABLED
 APIServer apiServer(deviceConfig, wifiStateManager, "/control");
@@ -194,7 +217,7 @@ void etvr_eye_tracker_web_init() {
 
   log_d("[SETUP]: WiFi not connected, starting AP Mode...");
   WiFi.mode(WIFI_AP);
-  WiFi.softAP("Galeros_ESP32", "Galeros_ESP32");  // ssid,password
+  WiFi.softAP( AP_SSID, AP_PASSWORD );  // ssid,password
   WiFi.softAPConfig(apIP, apIP, IPAddress(255, 255, 255, 0));
 
   dnsServer.start(DNS_PORT, "*", apIP);
