@@ -2,6 +2,8 @@
 #ifndef SERIAL_MANAGER
 #define SERIAL_MANAGER
 
+//增加自定义日志功能
+#include <functional>
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <USBCDC.h>
@@ -41,6 +43,8 @@ class SerialManager {
 
   void send_frame();
 #endif
+// ==================== 新增：日志回调函数 ====================
+  std::function<void(const String&)> logCallback = nullptr;
 
  public:
   SerialManager(CommandManager* commandManager);
@@ -49,6 +53,8 @@ class SerialManager {
                  std::string additional_info);
   void init();
   void run();
+  // ==================== 新增：设置日志回调 ====================
+  void setLogCallback(std::function<void(const String&)> callback);
 };
 
 #endif

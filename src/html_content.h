@@ -230,4 +230,111 @@ const char sta_config_html[] PROGMEM = R"rawliteral(
 </html>
 )rawliteral";
 
+// ====================== Web 实时日志页面 ======================
+const char web_log_html[] PROGMEM = R"rawliteral(
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenIris - 实时日志监控</title>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            font-family: 'Consolas', 'Courier New', monospace;
+            background: #0d1117;
+            color: #c9d1d9;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .header {
+            background: #161b22;
+            padding: 12px 20px;
+            border-bottom: 1px solid #30363d;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        h1 { font-size: 20px; color: #58a6ff; }
+        .controls button {
+            padding: 6px 14px;
+            margin-left: 8px;
+            background: #21262d;
+            color: #c9d1d9;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        .controls button:hover { background: #30363d; }
+        #log {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            background: #0d1117;
+            line-height: 1.5;
+            font-size: 14px;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .log-line { margin-bottom: 2px; }
+        .timestamp { color: #8b949e; margin-right: 10px; }
+        .level-d { color: #58a6ff; }   /* debug */
+        .level-i { color: #3fb950; }   /* info */
+        .level-w { color: #d29922; }   /* warning */
+        .level-e { color: #f85149; }   /* error */
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📡 OpenIris 实时日志监控 </h1>
+        <div class="controls">
+            <button onclick="clearLog()">清空日志</button>
+            <button onclick="togglePause()">暂停/继续</button>
+        </div>
+    </div>
+    <div id="log"></div>
+
+    <script>
+        let eventSource = null;
+        let isPaused = false;
+
+        function startLogStream() {
+            if (eventSource) eventSource.close();
+            
+            eventSource = new EventSource('/logs');
+            const logDiv = document.getElementById('log');
+
+            eventSource.onmessage = function(e) {
+                if (isPaused) return;
+                const time = new Date().toLocaleTimeString('zh-CN', {hour12: false});
+                logDiv.innerHTML += `<div class="log-line"><span class="timestamp">[${time}]</span>${e.data}</div>`;
+                logDiv.scrollTop = logDiv.scrollHeight;
+            };
+
+            eventSource.onerror = function() {
+                console.log("日志连接断开，尝试重连...");
+            };
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+
+        function togglePause() {
+            isPaused = !isPaused;
+            alert(isPaused ? "日志已暂停" : "日志已继续");
+        }
+
+        // 页面加载完成后启动
+        window.onload = startLogStream;
+    </script>
+</body>
+</html>
+)rawliteral";
+
+
 #endif // HTML_CONTENT_H
