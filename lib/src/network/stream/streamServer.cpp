@@ -68,7 +68,7 @@ esp_err_t StreamHelpers::stream(httpd_req_t *req)
         long request_end = millis();
         long latency = (request_end - last_request_time);
         last_request_time = request_end;
-        log_d("Size: %uKB, Time: %ums (%ifps)\n", _jpg_buf_len / 1024, latency, 1000 / latency);
+        Serial.printf("大小: %uKB, 时间: %ums (%ifps)\n", _jpg_buf_len / 1024, latency, 1000 / latency);
     }
     last_frame = 0;
     return res;

@@ -19,7 +19,7 @@ APIServer::APIServer(ProjectConfig& projectConfig,
 APIServer::~APIServer() {}
 
 void APIServer::setup() {
-  log_d("Initializing REST API Server");
+  Serial.printf("初始化REST API服务器\n");
   this->setupServer();
   BaseAPI::begin();
 
@@ -27,7 +27,7 @@ void APIServer::setup() {
   snprintf(buffer, sizeof(buffer),
            "^\\%s\\/([a-zA-Z0-9]+)\\/command\\/([a-zA-Z0-9]+)$",
            this->api_url.c_str());
-  log_d("API URL: %s", buffer);
+  Serial.printf("API URL: %s\n", buffer);
   server.on(buffer, 0b01111111, [&](AsyncWebServerRequest* request) {
       handleRequest(request);
   });
