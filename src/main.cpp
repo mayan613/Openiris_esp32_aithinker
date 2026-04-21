@@ -294,7 +294,7 @@ void setupWebLogServer() // 这个函数专门用来设置Web日志服务器的,
 }
 
 // ====================== 自定义日志发送核心函数 ======================
-void SendLogToWeb(const char *initialCustomLog = nullptr) // 自定义传入的日志
+extern "C" void SendLogToWeb(const char *initialCustomLog = nullptr) // 自定义传入的日志
 {
 
   // 增加自定义日志发送功能，如果用户传入了initialCustomLog参数，就立即发送这条日志到网页上

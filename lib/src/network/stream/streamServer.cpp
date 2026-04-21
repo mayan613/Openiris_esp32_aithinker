@@ -1,5 +1,7 @@
 #include "streamServer.hpp"
 
+extern "C" void SendLogToWeb(const char *initialCustomLog); // 声明自定义日志发送函数
+
 constexpr static const char *STREAM_CONTENT_TYPE = "multipart/x-mixed-replace;boundary=" PART_BOUNDARY;
 constexpr static const char *STREAM_BOUNDARY = "\r\n--" PART_BOUNDARY "\r\n";
 constexpr static const char *STREAM_PART = "Content-Type: image/jpeg\r\nContent-Length: %u\r\nX-Timestamp: %d.%06d\r\n\r\n";
@@ -68,7 +70,10 @@ esp_err_t StreamHelpers::stream(httpd_req_t *req)
         long request_end = millis();
         long latency = (request_end - last_request_time);
         last_request_time = request_end;
-        Serial.printf("大小: %uKB, 时间: %ums (%ifps)\n", _jpg_buf_len / 1024, latency, 1000 / latency);
+
+        String logMsg = "大小: " + String(_jpg_buf_len / 1024) + "KB, 时间: " + String(latency) + "ms (" + String(1000 / latency) + "fps)";
+        Serial.println(logMsg);
+        SendLogToWeb(logMsg.c_str());
     }
     last_frame = 0;
     return res;
@@ -100,13 +105,26 @@ int StreamServer::startStreamServer()
     {
         httpd_register_uri_handler(camera_stream, &stream_page);
         Serial.println("Stream server initialized");
+        SendLogToWeb("Stream server initialized");
         switch (wifiStateManager.getCurrentState())
         {
         case WiFiState_e::WiFiState_ADHOC:
-            Serial.printf("\n\rThe stream is under: http://%s:%i\n\r", WiFi.softAPIP().toString().c_str(), this->STREAM_SERVER_PORT);
+            char logMsg[128];
+            snprintf(logMsg, sizeof(logMsg),
+                     "The stream is under: http://%s:%i",
+                     WiFi.softAPIP().toString().c_str(), this->STREAM_SERVER_PORT);
+
+            Serial.print(logMsg); // 输出到串口（保留 \n\r）
+            SendLogToWeb(logMsg);
             break;
         default:
-            Serial.printf("\n\rThe stream is under: http://%s:%i\n\r", WiFi.localIP().toString().c_str(), this->STREAM_SERVER_PORT);
+            char logMsg1[128];
+            snprintf(logMsg1, sizeof(logMsg1),
+                     "The stream is under: http://%s:%i",
+                     WiFi.localIP().toString().c_str(), this->STREAM_SERVER_PORT);
+
+            Serial.print(logMsg1);
+            SendLogToWeb(logMsg1);
             break;
         }
         return 0;
