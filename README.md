@@ -1,69 +1,126 @@
-# OpenIris - 自定义 WiFi 配网版
+# Galeros OpenIris - 自定义配网 + Web 日志版
 
-这是一个基于 OpenIris 项目修改的固件版本，主要增加了**网页配网功能**，让设备首次使用或忘记 WiFi 时可以通过浏览器轻松配置网络。
+[![PlatformIO](https://img.shields.io/badge/PlatformIO-3.0.0-blue?style=for-the-badge&logo=platformio)](https://platformio.org/)
+[![ESP32](https://img.shields.io/badge/ESP32-Arduino-ff69b4?style=for-the-badge&logo=espressif)](https://www.espressif.com/)
 
-### 新增功能
 
-- **智能 WiFi 配网流程**：
-  - 开机后自动尝试连接已保存的 WiFi
-  - 连接失败或首次使用时，自动开启 AP 热点（`Galeros_ESP32`）
-  - 支持通过浏览器进行 WiFi 配置（类似 Cymple 项目体验）
+一个基于 OpenIris 修改的 ESP32 固件，专注于**网页配网**和**实时 Web 日志监控**，让调试和使用更加便捷。
 
-- **配置管理页面**：
-  - 已连接 WiFi 时：访问 `http://设备IP:8080` 可查看当前连接的 WiFi，并修改网络
-  - 未连接 WiFi 时：当设备无法连接WiFi，也就是超过设定的期限时，便会开放热点，连接热点后，在浏览器打开`http://192.168.4.1`即可配网
+**项目目标**：让 ESP32 设备开箱即用，通过浏览器即可完成 WiFi 配置，并实时监控设备运行日志。
 
-- **保存后自动重启**：配置完成后自动保存到 NVS 并重启，无需手动操作
+![](https://www.galeros.xyz/images/ap-config-page.png)  
+*(此处可替换为你的项目实际截图 - 建议放配网页面 + 日志页面对比图)*
 
-- **AP 热点信息**：
-  - SSID：`Galeros_ESP32`
-  - Password：`Galeros_ESP32`
+---
 
-### 使用方法
+## 主要功能
 
-#### 1. 开发环境准备
+- **智能网页配网系统**
+  - 开机自动尝试连接已保存 WiFi
+  - 连接失败或首次使用时自动开启 AP 热点（`Galeros_ESP32`）
+  - 支持 Captive Portal 自动弹出配网页面
 
-1. 安装 **Visual Studio Code**
-2. 在 VS Code 中安装 **PlatformIO** 插件
-3. 克隆本仓库并用 VS Code 打开
+- **实时 Web 日志监控**
+  - 独立日志服务器（端口 1234）
+  - 支持 `Serial.printf`、`log_d`、`log_i` 等日志实时显示
+  - 支持自定义日志发送 `sendLogToWeb()`
 
-#### 2. 编译与烧录
+- **配置管理页面**
+  - 已连接 WiFi 后可通过 `http://设备IP:8080` 修改网络设置
 
-1. 打开 PlatformIO（左侧图标）
-2. 在下方点击 **Build**（或按 `Ctrl+Alt+B`）进行编译
-3. 编译成功后，点击 **Upload**（或按 `Ctrl+Alt+U`）烧录到开发板
-4. 烧录完成后，设备会自动重启
+- **优化体验**
+  - 美化后的配网和管理界面
+  - 更好的错误处理和日志系统
+  - 支持 OTA 更新
 
-#### 3. 首次配网步骤
+---
 
-1. 设备上电后，如果没有保存 WiFi，会自动开启热点 `Galeros_ESP32`
+## 使用方法
+
+### 1. 开发环境准备
+
+- 安装 **Visual Studio Code**
+- 在 VS Code 中安装 **PlatformIO** 插件
+- 克隆本仓库并用 VS Code 打开项目
+
+### 2. 编译与烧录
+
+1. 在 PlatformIO 左侧栏点击 **Build**（或按 `Ctrl+Alt+B`）
+2. 编译成功后点击 **Upload**（或按 `Ctrl+Alt+U`）烧录到开发板
+3. 烧录完成后设备会自动重启
+
+### 3. 首次配网流程
+
+1. 设备上电后，若未保存 WiFi，会自动开启热点 `Galeros_ESP32`
 2. 用手机或电脑连接该热点（密码：`Galeros_ESP32`）
-3. 打开浏览器，会自动弹出配网页面（或手动访问 `192.168.4.1`）
-4. 输入你的家用 WiFi 名称（SSID）和密码
+3. 浏览器会自动弹出配网页面（或手动访问 `192.168.4.1`）
+4. 输入你的家用 WiFi 名称和密码
 5. 点击“保存并重启”
 6. 设备重启后会自动尝试连接你设置的 WiFi
 
-#### 4. 已连接后的管理
+### 4. 查看实时日志
 
-- 设备成功连接 WiFi 后，可在浏览器输入 `http://设备IP:8080` 进入配置管理页面
-- 可在此页面修改 WiFi 信息（修改后会自动重启）
+设备连上 WiFi 后，在浏览器输入：
+```
+http://设备IP:1234
+```
+即可实时查看系统运行日志。
 
-### 项目说明
+### 5. 配置管理页面
 
-- 本项目基于 OpenIris 二次开发
-- 主要修改了 WiFi 初始化和配网逻辑
-- 配置信息保存在 NVS 中，重启后依然有效
-- 配置端口：**8080**（管理页面）
-- AP 模式端口：**80**
+已连接 WiFi 后访问：
+```
+http://设备IP:8080
+```
+可在此页面修改 WiFi 设置。
 
-### 注意事项
+---
 
-- 首次使用或忘记 WiFi 时请使用 AP 配网方式
+## 详细使用教程
+
+📖 **完整详细教程请访问：**  
+**[Galeros OpenIris 详细使用教程](https://www.galeros.xyz/2026/05/01/Galeros-OpenIris-ESP32-固件开发实战/)**
+
+教程包含：
+- 详细配网步骤图文说明
+- 日志系统使用方法
+- 自定义日志发送示例
+- 常见问题排查
+- 高级配置说明
+
+---
+
+## 注意事项
+
+- 首次使用必须通过 AP 配网方式配置 WiFi
 - 修改 WiFi 后设备会自动重启，请耐心等待
-- 推荐使用 Chrome 或 Edge 浏览器访问配置页面
+- 配置管理页面端口：**8080**
+- Web 日志监控页面端口：**1234**
+- AP 热点名称和密码可在 `main.cpp` 顶部修改
+- 目前日志回调功能仍在优化中，推荐使用 `sendLogToWeb()` 发送自定义调试日志
+
+---
+
+## 待办事项（TODO）
+
+- 完善日志回调系统（解决 `Serial.available()` 一直为 0 的问题）
+- 添加日志级别颜色区分（DEBUG / INFO / ERROR）
+- 支持网页端扫描附近 WiFi 列表
+- OTA 更新时暂停日志推送，避免冲突
+- 添加暗黑模式支持
+- 优化内存占用
+
+---
+
+## 项目说明
+
+- 基于 OpenIris 项目二次开发
+- 主要修改文件：`main.cpp`、`SerialManager.cpp`、`html_content.h`、`streamServer.cpp`
+- 配置信息保存在 NVS 中，重启后依然有效
 
 ---
 
 **欢迎 Star 本项目！**
 
 如有问题或建议，欢迎在 Issues 中提出。
+
