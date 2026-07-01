@@ -8,7 +8,7 @@
 
 **项目目标**：让 ESP32 设备开箱即用，通过浏览器即可完成 WiFi 配置，并实时监控设备运行日志。
 
-![](https://www.galeros.xyz/images/ap-config-page.png)  
+![](https://www.galeros.xyz/images/OpenIris/ap-config-page.png)  
 
 ---
 
@@ -78,7 +78,7 @@ http://设备IP:8080
 ## 详细使用教程
 
 📖 **完整详细教程请访问：**  
-**[Galeros OpenIris 详细使用教程](https://www.galeros.xyz/2026/05/01/Galeros-OpenIris-ESP32-固件开发实战/)**
+**[Galeros OpenIris 详细使用教程](https://www.galeros.xyz/2026/05/01/openiris-esp32/)**
 
 教程包含：
 - 详细配网步骤图文说明
