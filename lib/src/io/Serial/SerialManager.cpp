@@ -1,5 +1,6 @@
 #include "SerialManager.hpp"
 #include <functional>
+#include "data/utilities/log_manager.hpp"
 // 修改了，加入web日志功能相关的代码
 
 SerialManager::SerialManager(CommandManager *commandManager)
@@ -35,7 +36,7 @@ void SerialManager::send_frame()
   // commands
   if (err != ESP_OK)
   {
-    Serial.printf("Camera capture failed with response: %s", esp_err_to_name(err));
+    GLOG_E("SERIAL", "Camera capture failed with response: %s", esp_err_to_name(err));
     return;
   }
 
@@ -61,7 +62,7 @@ void SerialManager::send_frame()
   long request_end = millis();
   long latency = request_end - last_request_time;
   last_request_time = request_end;
-  Serial.printf("大小: %uKB, 时间: %ums (%ifps)\n", len / 1024, latency,
+  GLOG_D("SERIAL", "Frame: %uKB, latency: %ums (%dfps)", len / 1024, latency,
         1000 / latency);
 }
 #endif
@@ -84,18 +85,21 @@ void SerialManager::sendQuery(QueryAction action,
 
 void SerialManager::run()
 {
-  // 调试：每次调用都输出
+  // 每5秒输出一次调试信息
   static unsigned long lastRunDebug = 0;
   unsigned long currentTime = millis();
-  if (currentTime - lastRunDebug > 5000) {  // 每5秒输出一次
+  if (currentTime - lastRunDebug > 5000) {
     lastRunDebug = currentTime;
-    Serial.printf("[SerialManager::run] 被调用，Serial.available()=%d\n", Serial.available());
+    GLOG_D("SERIAL", "run() called, Serial.available()=%d", Serial.available());
   }
 
-  // ====================== 日志转发到 Web 服务器 ======================
+  // ====================== 串口数据转发到 Web 服务器 ======================
+  // 注意：Serial.available() 读取的是 UART0 RX (GPIO3)，
+  // 只有外部设备通过串口发送数据时才会有数据。
+  // 本项目 Web 配网模式下没有 PC 端软件发送串口命令，所以这里通常为 0。
   static String logBuffer = "";
 
-  while (Serial.available()) //这里有点问题，我在研究，不知道为什么一直为0，导致这个循环体内的代码永远不执行，我真没招了 QAQ
+  while (Serial.available())
   {
     char c = Serial.read();
     logBuffer += c;
@@ -103,8 +107,8 @@ void SerialManager::run()
     // 遇到换行符或者缓冲区太长时发送一次
     if (c == '\n' || logBuffer.length() > 1024)
     {
-      Serial.printf("\n[SerialManager] 读到数据，长度=%d，缓冲区前50字: %.50s\n", logBuffer.length(), logBuffer.c_str());
-      
+      GLOG_D("SERIAL", "Read data, len=%d, first 50 chars: %.50s", logBuffer.length(), logBuffer.c_str());
+
       // 尝试解析为JSON命令
       JsonDocument doc;
       DeserializationError deserializationError = deserializeJson(doc, logBuffer);
@@ -112,23 +116,21 @@ void SerialManager::run()
       if (!deserializationError)
       {
         // 是JSON命令，处理它
-        Serial.printf("[SerialManager] 识别为JSON命令\n");
+        GLOG_I("SERIAL", "Recognized as JSON command");
         CommandsPayload commands = {doc};
         this->commandManager->handleCommands(commands);
       }
       else
       {
         // 不是JSON，当作日志转发
-        Serial.printf("[SerialManager] 非JSON，尝试转发日志。logCallback=%s\n", logCallback ? "有效" : "空");
+        GLOG_D("SERIAL", "Non-JSON, forwarding as log. logCallback=%s", logCallback ? "valid" : "null");
         if (logCallback)
         {
-          Serial.printf("[SerialManager] 调用回调函数\n");
           logCallback(logBuffer);
-          Serial.printf("[SerialManager] 回调函数已调用\n");
         }
         else
         {
-          Serial.printf("[SerialManager] WARNING: logCallback为空！\n");
+          GLOG_W("SERIAL", "logCallback is null, cannot forward!");
         }
       }
       logBuffer = "";

@@ -1,4 +1,5 @@
 #include "baseAPI.hpp"
+#include "data/utilities/log_manager.hpp"
 
 const char* BaseAPI::MIMETYPE_JSON{"application/json"};
 
@@ -42,7 +43,7 @@ void BaseAPI::begin() {
 
 void BaseAPI::notFound(AsyncWebServerRequest* request) const {
   if (_networkMethodsMap.find(request->method()) != _networkMethodsMap.end()) {
-    log_i("%s: http://%s%s/\n",
+    GLOG_I("API", "%s: http://%s%s/",
           _networkMethodsMap.at(request->method()).c_str(),
           request->host().c_str(), request->url().c_str());
     char buffer[100];
@@ -69,7 +70,7 @@ void BaseAPI::setWiFi(AsyncWebServerRequest* request) {
       uint8_t power = 0;
       uint8_t adhoc = 0;
 
-      log_d("Number of Params: %d", params);
+      GLOG_D("API", "Number of Params: %d", params);
       for (int i = 0; i < params; i++) {
         const AsyncWebParameter* param = request->getParam(i);
         if (param->name() == "networkName") {
@@ -86,7 +87,7 @@ void BaseAPI::setWiFi(AsyncWebServerRequest* request) {
           adhoc = (uint8_t)atoi(param->value().c_str());
         }
 
-        log_i("%s[%s]: %s\n", _networkMethodsMap[request->method()].c_str(),
+        GLOG_I("API", "%s[%s]: %s", _networkMethodsMap[request->method()].c_str(),
               param->name().c_str(), param->value().c_str());
       }
       // note: We're passing empty params by design, this is done to reset
@@ -226,7 +227,7 @@ void BaseAPI::rebootDevice(AsyncWebServerRequest* request) {
 void BaseAPI::factoryReset(AsyncWebServerRequest* request) {
   switch (_networkMethodsMap_enum[request->method()]) {
     case GET: {
-      log_d("Factory Reset");
+      GLOG_D("API", "Factory Reset");
       projectConfig.reset();
       request->send(200, MIMETYPE_JSON, "{\"msg\":\"Factory Reset\"}");
     }
@@ -324,13 +325,13 @@ void BaseAPI::rssi(AsyncWebServerRequest* request) {
 void BaseAPI::checkAuthentication(AsyncWebServerRequest* request,
                                   const char* login,
                                   const char* password) {
-  log_d("[DEBUG] Free Heap: %d", ESP.getFreeHeap());
+  GLOG_D("API", "Free Heap: %d", ESP.getFreeHeap());
   if (_authRequired) {
-    log_d("[DEBUG] Free Heap: %d", ESP.getFreeHeap());
-    log_i("Auth required");
-    log_d("[DEBUG] Free Heap: %d", ESP.getFreeHeap());
+    GLOG_D("API", "Free Heap: %d", ESP.getFreeHeap());
+    GLOG_I("API", "Auth required");
+    GLOG_D("API", "Free Heap: %d", ESP.getFreeHeap());
     if (!request->authenticate(login, password, NULL, false)) {
-      log_d("[DEBUG] Free Heap: %d", ESP.getFreeHeap());
+      GLOG_D("API", "Free Heap: %d", ESP.getFreeHeap());
       return request->requestAuthentication(NULL, false);
     }
   }
@@ -343,24 +344,24 @@ void BaseAPI::beginOTA() {
   auto mdns_config = projectConfig.getMDNSConfig();
 
   if (device_config.OTAPassword.empty()) {
-    log_e(
+    GLOG_E("API",
         "Password is empty, you need to provide a password in order to setup "
         "the OTA server");
     return;
   }
 
-  log_i("[OTA Server]: Initializing OTA Server");
-  log_i(
+  GLOG_I("API", "[OTA Server]: Initializing OTA Server");
+  GLOG_I("API",
       "[OTA Server]: Navigate to http://%s.local:81/update to update the "
       "firmware",
       mdns_config.hostname.c_str());
 
-  log_d("[OTA Server]: Username: %s, Password: %s",
+  GLOG_D("API", "[OTA Server]: Username: %s, Password: %s",
         device_config.OTALogin.c_str(), device_config.OTAPassword.c_str());
-  log_d("[DEBUG] Free Heap: %d", ESP.getFreeHeap());
+  GLOG_D("API", "Free Heap: %d", ESP.getFreeHeap());
   const char* login = device_config.OTALogin.c_str();
   const char* password = device_config.OTAPassword.c_str();
-  log_d("[DEBUG] Free Heap: %d", ESP.getFreeHeap());
+  GLOG_D("API", "Free Heap: %d", ESP.getFreeHeap());
 
   // Note: HTTP_GET
   server.on(
@@ -374,7 +375,7 @@ void BaseAPI::beginOTA() {
       });
 
   server.on("/update", 0b00000001, [&](AsyncWebServerRequest* request) {
-    log_d("[DEBUG] Free Heap: %d", ESP.getFreeHeap());
+    GLOG_D("API", "Free Heap: %d", ESP.getFreeHeap());
     checkAuthentication(request, login, password);
 
     // turn off the camera and stop the stream

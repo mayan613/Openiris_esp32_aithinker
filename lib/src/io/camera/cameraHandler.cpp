@@ -1,4 +1,5 @@
 #include "cameraHandler.hpp"
+#include "data/utilities/log_manager.hpp"
 
 CameraHandler::CameraHandler(ProjectConfig& configManager)
     : configManager(configManager) {}
@@ -6,9 +7,9 @@ CameraHandler::CameraHandler(ProjectConfig& configManager)
 void CameraHandler::setupCameraPinout() {
   // Workaround for espM5SStack not having a defined camera
 #ifdef CAMERA_MODULE_NAME
-  log_i("[Camera]: Camera module is %s", CAMERA_MODULE_NAME);
+  GLOG_I("CAM", "[Camera]: Camera module is %s", CAMERA_MODULE_NAME);
 #else
-  log_i("[Camera]: Camera module is undefined");
+  GLOG_I("CAM", "[Camera]: Camera module is undefined");
 #endif
 
   // camera external clock signal frequencies
@@ -25,7 +26,7 @@ void CameraHandler::setupCameraPinout() {
    **/
   pinMode(13, INPUT_PULLUP);
   pinMode(14, INPUT_PULLUP);
-  log_i("ESP_EYE");
+  GLOG_I("CAM", "ESP_EYE");
 #elif CONFIG_CAMERA_MODULE_CAM_BOARD
   /* IO13, IO14 is designed for JTAG by default,
    * to use it as generalized input,
@@ -33,7 +34,7 @@ void CameraHandler::setupCameraPinout() {
    **/
   pinMode(13, INPUT_PULLUP);
   pinMode(14, INPUT_PULLUP);
-  log_i("CAM_BOARD");
+  GLOG_I("CAM", "CAM_BOARD");
 #endif
 #if ETVR_EYE_TRACKER_USB_API
   xclk_freq_hz = USB_DEFAULT_XCLK_FREQ_HZ;
@@ -66,30 +67,30 @@ void CameraHandler::setupBasicResolution() {
   config.frame_size = CAM_RESOLUTION;
 
   if (!psramFound()) {
-    log_e("[Camera]: 没有找到psram,正在设置更低的图形质量以适应内存限制!");
-    Serial.println("❌ PSRAM初始化失败 ");
-    Serial.println("可能的原因:");
-    Serial.println("1. 你的ESP32开发板没有psram芯片,或者psram芯片损坏");
-    Serial.println("2. 你的ESP32开发板没有正确连接psram芯片,或者供电不足");
-    Serial.println("3. platformio.ini 中的板子设置错误");
+    GLOG_E("CAM", "[Camera]: No PSRAM found, lowering image quality to fit memory!");
+    GLOG_E("CAM", "PSRAM init failed");
+    GLOG_E("CAM", "Possible causes:");
+    GLOG_E("CAM", "1. Your ESP32 board does not have a PSRAM chip, or it's damaged");
+    GLOG_E("CAM", "2. PSRAM chip not properly connected, or insufficient power");
+    GLOG_E("CAM", "3. Wrong board settings in platformio.ini");
     config.fb_location = CAMERA_FB_IN_DRAM;
     config.jpeg_quality = 9;
     config.fb_count = 2;
     return;
   }
 
-  log_d("[Camera]: 找到psram,正在设置更高的图像质量");
-  log_d("✅ PSRAM初始化成功 ");
-  log_d("PSRAM总大小 : %d KB\n", ESP.getPsramSize() / 1024);
-  log_d("剩余的PSRAM空间 : %d KB\n", ESP.getFreePsram() / 1024);
+  GLOG_D("CAM", "[Camera]: PSRAM found, setting higher image quality");
+  GLOG_D("CAM", "PSRAM init successful");
+  GLOG_D("CAM", "PSRAM total size: %d KB", ESP.getPsramSize() / 1024);
+  GLOG_D("CAM", "Free PSRAM: %d KB", ESP.getFreePsram() / 1024);
   config.jpeg_quality = 7;  // 0-63 lower number = higher quality, more latency
                             // and less fps   7 for most fps, 5 for best quality
   config.fb_count = 3;
-  log_d("[Camera]: 将fb_location设置为CAMERA_FB_IN_PSRAM");
+  GLOG_D("CAM", "[Camera]: Setting fb_location to CAMERA_FB_IN_PSRAM");
 }
 
 void CameraHandler::setupCameraSensor() {
-  log_d("[Camera]: 设置相机传感器中...");
+  GLOG_D("CAM", "[Camera]: Setting up camera sensor...");
 
   camera_sensor = esp_camera_sensor_get();
   // fixes corrupted jpegs, https://github.com/espressif/esp32-camera/issues/203
@@ -150,27 +151,25 @@ void CameraHandler::setupCameraSensor() {
       2);  // 0 to 6 (0 - No Effect, 1 - Negative, 2 - Grayscale, 3 - Red Tint,
            // 4 - Green Tint, 5 - Blue Tint, 6 - Sepia)
 
-  log_d("[Camera]: Setting up camera sensor done");
+  GLOG_D("CAM", "[Camera]: Setting up camera sensor done");
 }
 
 bool CameraHandler::setupCamera() {
-  log_d("[Camera]: Setting up camera pinout");
+  GLOG_D("CAM", "[Camera]: Setting up camera pinout");
   this->setupCameraPinout();
-  log_d("[Camera]: Setting up camera with resolution");
+  GLOG_D("CAM", "[Camera]: Setting up camera with resolution");
   this->setupBasicResolution();
-  log_d("[Camera]: Initializing camera...");
+  GLOG_D("CAM", "[Camera]: Initializing camera...");
 
   esp_err_t hasCameraBeenInitialized = esp_camera_init(&config);
-  log_d("[Camera]: Camera initialized: %s \r\n",
+  GLOG_D("CAM", "[Camera]: Camera initialized: %s",
         esp_err_to_name(hasCameraBeenInitialized));
   if (hasCameraBeenInitialized != ESP_OK) {
-    log_e("[Camera]: Camera initialization failed with error: %s \r\n",
+    GLOG_E("CAM", "[Camera]: Camera initialization failed with error: %s",
           esp_err_to_name(hasCameraBeenInitialized));
-    log_e(
+    GLOG_E("CAM",
         "[Camera]: Camera most likely not seated properly in the socket. "
-        "Please "
-        "fix the "
-        "camera and reboot the device.\r\n");
+        "Please fix the camera and reboot the device.");
     ledStateManager.setState(LEDStates_e::_Camera_Error);
     return false;
   }
@@ -197,14 +196,14 @@ bool CameraHandler::setupCamera() {
 }
 
 void CameraHandler::loadConfigData() {
-  log_d("[Camera]: Loading camera config data");
+  GLOG_D("CAM", "[Camera]: Loading camera config data");
   ProjectConfig::CameraConfig_t cameraConfig = configManager.getCameraConfig();
   this->setHFlip(cameraConfig.href);
   this->setVFlip(cameraConfig.vflip);
   this->setCameraResolution((framesize_t)cameraConfig.framesize);
   camera_sensor->set_quality(camera_sensor, cameraConfig.quality);
   camera_sensor->set_agc_gain(camera_sensor, cameraConfig.brightness);
-  log_d("Loading camera config data done");
+  GLOG_D("CAM", "Loading camera config data done");
 }
 
 #ifdef CONFIG_CAMERA_MODULE_SWROOM_BABBLE_S3

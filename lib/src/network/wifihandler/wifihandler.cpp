@@ -2,6 +2,7 @@
 #include <WiFi.h>
 #include "data/StateManager/StateManager.hpp"
 #include "data/utilities/helpers.hpp"
+#include "data/utilities/log_manager.hpp"
 
 WiFiHandler::WiFiHandler(ProjectConfig& configManager,
                          const std::string& ssid,
@@ -25,47 +26,47 @@ void WiFiHandler::begin() {
   // https://github.com/espressif/arduino-esp32/issues/8770
   WiFi.setMinSecurity(WIFI_AUTH_WEP);
 
-  log_i("Starting WiFi Handler \n\r");
+  GLOG_I("WIFI", "Starting WiFi Handler");
   if (this->_enable_adhoc ||
       wifiStateManager.getCurrentState() == WiFiState_e::WiFiState_ADHOC) {
-    log_d("ADHOC is enabled, setting up ADHOC network \n\r");
+    GLOG_D("WIFI", "ADHOC is enabled, setting up ADHOC network");
     this->setUpADHOC();
     return;
   }
 
-  log_d("ADHOC is disabled, setting up STA network and checking transmission power \n\r");
+  GLOG_D("WIFI", "ADHOC is disabled, setting up STA network and checking transmission power");
   auto txpower = configManager.getWiFiTxPowerConfig();
-  log_d("Setting Wifi Power to: %d", txpower.power);
-  log_d("Setting WiFi sleep mode to NONE \n\r");
+  GLOG_D("WIFI", "Setting Wifi Power to: %d", txpower.power);
+  GLOG_D("WIFI", "Setting WiFi sleep mode to NONE");
   WiFi.setSleep(false);
 
-  log_i("Initializing connection to wifi \n\r");
+  GLOG_I("WIFI", "Initializing connection to wifi");
   wifiStateManager.setState(WiFiState_e::WiFiState_Connecting);
 
   auto networks = configManager.getWifiConfigs();
 
   if (networks.empty()) {
-    log_i("No networks found in config, trying the default one \n\r");
+    GLOG_I("WIFI", "No networks found in config, trying the default one");
     
     if (this->iniSTA(
           this->ssid,
           this->password,
-          this->channel, 
+          this->channel,
           (wifi_power_t)txpower.power
         )
     ) {
       return;
     }
 
-    log_i(
+    GLOG_I("WIFI",
         "Could not connect to the hardcoded network, setting up ADHOC "
-        "network \n\r");
+        "network");
     this->setUpADHOC();
     return;
   }
 
   for (auto& network : networks) {
-    log_i("Trying to connect to network: %s \n\r", network.ssid.c_str());
+    GLOG_I("WIFI", "Trying to connect to network: %s", network.ssid.c_str());
     if (this->iniSTA(network.ssid, network.password, network.channel,
                      (wifi_power_t)network.power)) {
       return;
@@ -73,19 +74,19 @@ void WiFiHandler::begin() {
   }
 
   // at this point, we've tried every network, let's just setup adhoc
-  log_i(
+  GLOG_I("WIFI",
       "We've gone through every network, each timed out. Trying to connect "
-      "to hardcoded network: %s \n\r",
+      "to hardcoded network: %s",
       this->ssid.c_str());
   if (this->iniSTA(this->ssid, this->password, this->channel,
                    (wifi_power_t)txpower.power)) {
-    log_i("Successfully connected to the hardcoded network. \n\r");
+    GLOG_I("WIFI", "Successfully connected to the hardcoded network.");
     return;
   }
 
-  log_i(
+  GLOG_I("WIFI",
       "Could not connect to the hardcoded network, setting up adhoc. "
-      "\n\r");
+      "");
   this->setUpADHOC();
 }
 
@@ -94,12 +95,12 @@ void WiFiHandler::adhoc(const std::string& ssid,
                         const std::string& password) {
   wifiStateManager.setState(WiFiState_e::WiFiState_ADHOC);
 
-  log_i("\n[INFO]: Configuring access point...\n");
+  GLOG_I("WIFI", "Configuring access point...");
   WiFi.mode(WIFI_AP);
   WiFi.setSleep(WIFI_PS_NONE);
-  Serial.printf("\r\nStarting AP. \r\n");
+  GLOG_I("WIFI", "Starting AP");
   IPAddress IP = WiFi.softAPIP();
-  Serial.printf("[INFO]: AP IP address: %s.\r\n", IP.toString().c_str());
+  GLOG_I("WIFI", "AP IP address: %s", IP.toString().c_str());
   // You can remove the password parameter if you want the AP to be open.
   ProjectConfig::WiFiTxPower_t txpower = configManager.getWiFiTxPowerConfig();
   WiFi.softAP(ssid.c_str(), password.c_str(),
@@ -113,17 +114,17 @@ void WiFiHandler::setUpADHOC() {
   extern const char* ADHOC_AP_PASSWORD;
   extern const uint8_t ADHOC_AP_CHANNEL;
 
-  log_i("\n[INFO]: Setting Up Access Point...\n");
+  GLOG_I("WIFI", "Setting Up Access Point...");
   size_t ssidLen = configManager.getAPWifiConfig().ssid.length();
   size_t passwordLen = configManager.getAPWifiConfig().password.length();
   if (ssidLen <= 0) {
-    log_i("\n[INFO]: Configuring access point with default values\n");
+    GLOG_I("WIFI", "Configuring access point with default values");
     this->adhoc(ADHOC_AP_SSID, ADHOC_AP_CHANNEL, ADHOC_AP_PASSWORD);
     return;
   }
 
   if (passwordLen <= 0) {
-    log_i("\n[INFO]: Configuring access point without a password\n");
+    GLOG_I("WIFI", "Configuring access point without a password");
     this->adhoc(configManager.getAPWifiConfig().ssid,
                 configManager.getAPWifiConfig().channel);
     return;
@@ -133,11 +134,11 @@ void WiFiHandler::setUpADHOC() {
               configManager.getAPWifiConfig().channel,
               configManager.getAPWifiConfig().password);
 
-  log_i("\n[INFO]: Configuring access point...\n");
-  log_d("\n[DEBUG]: ssid: %s\n", configManager.getAPWifiConfig().ssid.c_str());
-  log_d("\n[DEBUG]: password: %s\n",
+  GLOG_I("WIFI", "Configuring access point...");
+  GLOG_D("WIFI", "ssid: %s", configManager.getAPWifiConfig().ssid.c_str());
+  GLOG_D("WIFI", "password: %s",
         configManager.getAPWifiConfig().password.c_str());
-  log_d("\n[DEBUG]: channel: %d\n", configManager.getAPWifiConfig().channel);
+  GLOG_D("WIFI", "channel: %d", configManager.getAPWifiConfig().channel);
 }
 
 bool WiFiHandler::iniSTA(const std::string& ssid,
@@ -148,8 +149,8 @@ bool WiFiHandler::iniSTA(const std::string& ssid,
   // since networks may not have a password, we only need to check if we have an ssid
   // bail if we don't  
   if (ssid == ""){
-    log_d("ssid missing, bailing");
-    return false; 
+    GLOG_D("WIFI", "ssid missing, bailing");
+    return false;
   }
 
   unsigned long currentMillis = millis();
@@ -158,30 +159,29 @@ bool WiFiHandler::iniSTA(const std::string& ssid,
   int progress = 0;
 
   wifiStateManager.setState(WiFiState_e::WiFiState_Connecting);
-  log_i("Trying to connect to: %s \n\r", ssid.c_str());
+  GLOG_I("WIFI", "Trying to connect to: %s", ssid.c_str());
   auto mdnsConfig = configManager.getMDNSConfig();
   WiFi.config(INADDR_NONE, INADDR_NONE, INADDR_NONE,
               INADDR_NONE);  // need to call before setting hostname
-  log_d("Setting hostname %s \n\r");
-  WiFi.setHostname(mdnsConfig.hostname.c_str());
-    log_i("Setting TX power to: %d \n\r", (uint8_t)power);
+  GLOG_D("WIFI", "Setting hostname %s", mdnsConfig.hostname.c_str());
+  GLOG_I("WIFI", "Setting TX power to: %d", (uint8_t)power);
   WiFi.setTxPower(power); // https://github.com/espressif/arduino-esp32/issues/5698
   WiFi.begin(ssid.c_str(), password.c_str(), channel);
 
-  log_d("Waiting for WiFi to connect... \n\r");
+  GLOG_D("WIFI", "Waiting for WiFi to connect...");
   while (WiFi.status() != WL_CONNECTED) {
     progress++;
     currentMillis = millis();
-    log_i(".");
-    log_d("Progress: %d \n\r", progress);
+    GLOG_I("WIFI", ".");
+    GLOG_D("WIFI", "Progress: %d", progress);
     if ((currentMillis - startingMillis) >= connectionTimeout) {
       wifiStateManager.setState(WiFiState_e::WiFiState_Error);
-      log_e("Connection to: %s TIMEOUT \n\r", ssid.c_str());
+      GLOG_E("WIFI", "Connection to: %s TIMEOUT", ssid.c_str());
       return false;
     }
   }
   wifiStateManager.setState(WiFiState_e::WiFiState_Connected);
-  log_i("Successfully connected to %s \n\r", ssid.c_str());
+  GLOG_I("WIFI", "Successfully connected to %s", ssid.c_str());
   return true;
 }
 

@@ -1,4 +1,5 @@
 #include "network_utilities.hpp"
+#include "data/utilities/log_manager.hpp"
 
 void Network_Utilities::setupWifiScan()
 {
@@ -6,21 +7,21 @@ void Network_Utilities::setupWifiScan()
     WiFi.mode(WIFI_STA);
     WiFi.disconnect(); // Disconnect from the access point if connected before
     my_delay(0.1);
-    Serial.println("Setup done");
+    GLOG_I("NET", "Setup done");
 }
 
 bool Network_Utilities::loopWifiScan()
 {
     // WiFi.scanNetworks will return the number of networks found
-    log_i("[INFO]: Beginning WiFi Scanner");
+    GLOG_I("NET", "[INFO]: Beginning WiFi Scanner");
     int networks = WiFi.scanNetworks(true, true);
-    log_i("[INFO]: scan done");
-    log_i("%d networks found", networks);
+    GLOG_I("NET", "[INFO]: scan done");
+    GLOG_I("NET", "%d networks found", networks);
     for (int i = networks; i--;)
     {
         // Print SSID and RSSI for each network found
         //! TODO: Add method here to interface with the API and forward the scanned networks to the API
-        log_i("%d: %s (%d) %s\n", i - 1, WiFi.SSID(i), WiFi.RSSI(i), (WiFi.encryptionType(i) == WIFI_AUTH_OPEN) ? " " : "*");
+        GLOG_I("NET", "%d: %s (%d) %s", i - 1, WiFi.SSID(i), WiFi.RSSI(i), (WiFi.encryptionType(i) == WIFI_AUTH_OPEN) ? " " : "*");
         my_delay(0.02L); // delay 20ms
     }
     return (networks > 0);
@@ -53,10 +54,10 @@ std::string Network_Utilities::generateDeviceID() {
     chipId |= ((ESP.getEfuseMac() >> (40 - i)) & 0xff) << i;
   }
 
-  log_i("ESP Chip model = %s Rev %d\n", ESP.getChipModel(),
+  GLOG_I("NET", "ESP Chip model = %s Rev %d", ESP.getChipModel(),
         ESP.getChipRevision());
-  log_i("This chip has %d cores\n", ESP.getChipCores());
-  log_i("Chip ID: %d", chipId);
+  GLOG_I("NET", "This chip has %d cores", ESP.getChipCores());
+  GLOG_I("NET", "Chip ID: %d", chipId);
   std::string deviceID = (const char*)chipId;
   return deviceID;
 }

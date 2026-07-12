@@ -1,4 +1,5 @@
 #include "project_config.hpp"
+#include "data/utilities/log_manager.hpp"
 #include "sensor.h"
 
 ProjectConfig::ProjectConfig(const std::string& name,
@@ -16,14 +17,14 @@ ProjectConfig::~ProjectConfig() {}
  */
 void ProjectConfig::initConfig() {
   if (_name.empty()) {
-    log_e("Config name is null\n");
+    GLOG_E("CFG", "Config name is null");
     _name = "openiris";
   }
 
   bool success = begin(_name.c_str());
 
-  log_i("[Project Config]: Config name: %s", _name.c_str());
-  log_i("[Project Config]: Config loaded: %s", success ? "true" : "false");
+  GLOG_I("CFG", "[Project Config]: Config name: %s", _name.c_str());
+  GLOG_I("CFG", "[Project Config]: Config loaded: %s", success ? "true" : "false");
 
   /*
   * If the config is not loaded,
@@ -34,7 +35,7 @@ void ProjectConfig::initConfig() {
   this->config.device = {OTA_LOGIN, OTA_PASSWORD, 3232};
 
   if (_mdnsName.empty()) {
-    log_e("MDNS name is null\n Auto-assigning name to 'openiristracker'");
+    GLOG_E("CFG", "MDNS name is null, auto-assigning name to 'openiristracker'");
     _mdnsName = "openiristracker";
   }
   this->config.mdns = {
@@ -42,7 +43,7 @@ void ProjectConfig::initConfig() {
       "openiristracker",
   };
 
-  log_i("[Project Config]: MDNS name: %s", _mdnsName.c_str());
+  GLOG_I("CFG", "[Project Config]: MDNS name: %s", _mdnsName.c_str());
 
   this->config.ap_network = {
       "",
@@ -61,7 +62,7 @@ void ProjectConfig::initConfig() {
 }
 
 void ProjectConfig::save() {
-  log_d("Saving project config");
+  GLOG_D("CFG", "Saving project config");
   deviceConfigSave();
   mdnsConfigSave();
   cameraConfigSave();
@@ -73,7 +74,7 @@ void ProjectConfig::save() {
 }
 
 void ProjectConfig::wifiConfigSave() {
-  log_d("Saving wifi config");
+  GLOG_D("CFG", "Saving wifi config");
 
   /* WiFi Config */
   putInt("networkCount", this->config.networks.size());
@@ -105,7 +106,7 @@ void ProjectConfig::wifiConfigSave() {
   putString("apPass", this->config.ap_network.password.c_str());
   putUInt("apChannel", this->config.ap_network.channel);
 
-  log_i("[Project Config]: Wifi configs saved");
+  GLOG_I("CFG", "[Project Config]: Wifi configs saved");
 }
 
 void ProjectConfig::deviceConfigSave() {
@@ -136,14 +137,14 @@ void ProjectConfig::cameraConfigSave() {
 }
 
 bool ProjectConfig::reset() {
-  log_w("Resetting project config");
+  GLOG_W("CFG", "Resetting project config");
   return clear();
 }
 
 void ProjectConfig::load() {
-  log_d("Loading project config");
+  GLOG_D("CFG", "Loading project config");
   if (this->_already_loaded) {
-    log_w("Project config already loaded");
+    GLOG_W("CFG", "Project config already loaded");
     return;
   }
 
@@ -168,7 +169,7 @@ void ProjectConfig::load() {
   int networkCount = getInt("networkCount", 0);
   // 如果 NVS 中有保存的网络，就正常加载（这是我们网页配网保存的）
   if (networkCount > 0) {
-    log_i("[Project Config]: Found %d saved network(s) from NVS",
+    GLOG_I("CFG", "[Project Config]: Found %d saved network(s) from NVS",
           networkCount);
 
     std::string name = "name";
@@ -198,7 +199,7 @@ void ProjectConfig::load() {
     }
   } else {
     // 没有保存任何网络 → 清空 networks，让程序进入 AP 配网模式
-    log_i(
+    GLOG_I("CFG",
         "[Project Config]: No saved WiFi networks found. Ready for web "
         "configuration (AP Mode).");
     this->config.networks.clear();
@@ -258,7 +259,7 @@ void ProjectConfig::setDeviceConfig(const std::string& OTALogin,
                                     const std::string& OTAPassword,
                                     int OTAPort,
                                     bool shouldNotify) {
-  log_d("Updating device config");
+  GLOG_D("CFG", "Updating device config");
   this->config.device.OTALogin.assign(OTALogin);
   this->config.device.OTAPassword.assign(OTAPassword);
   this->config.device.OTAPort = OTAPort;
@@ -270,7 +271,7 @@ void ProjectConfig::setDeviceConfig(const std::string& OTALogin,
 void ProjectConfig::setMDNSConfig(const std::string& hostname,
                                   const std::string& service,
                                   bool shouldNotify) {
-  log_d("Updating MDNS config");
+  GLOG_D("CFG", "Updating MDNS config");
   this->config.mdns.hostname.assign(hostname);
   this->config.mdns.service.assign(service);
 
@@ -284,14 +285,14 @@ void ProjectConfig::setCameraConfig(uint8_t vflip,
                                     uint8_t quality,
                                     uint8_t brightness,
                                     bool shouldNotify) {
-  log_d("Updating camera config");
+  GLOG_D("CFG", "Updating camera config");
   this->config.camera.vflip = vflip;
   this->config.camera.href = href;
   this->config.camera.framesize = framesize;
   this->config.camera.quality = quality;
   this->config.camera.brightness = brightness;
 
-  log_d("Updating Camera config");
+  GLOG_D("CFG", "Updating Camera config");
   if (shouldNotify)
     this->notifyAll(ConfigState_e::cameraConfigUpdated);
 }
@@ -311,7 +312,7 @@ void ProjectConfig::setWifiConfig(const std::string& networkName,
   for (auto it = this->config.networks.begin();
        it != this->config.networks.end();) {
     if (it->name == networkName) {
-      log_i("[Project Config]: Found network %s, updating it ...",
+      GLOG_I("CFG", "[Project Config]: Found network %s, updating it ...",
             it->name.c_str());
 
       it->name = networkName;
@@ -335,7 +336,7 @@ void ProjectConfig::setWifiConfig(const std::string& networkName,
   }
 
   if (size < 3 && size > 0) {
-    Serial.println("We're adding a new network");
+    GLOG_I("CFG", "We're adding a new network");
     // we don't have that network yet, we can add it as we still have some
     // space we're using emplace_back as push_back will create a copy of it,
     // we want to avoid that
@@ -345,7 +346,7 @@ void ProjectConfig::setWifiConfig(const std::string& networkName,
 
   // we're allowing to store up to three additional networks
   if (size == 0) {
-    Serial.println("No networks, We're adding a new network");
+    GLOG_I("CFG", "No networks, We're adding a new network");
     this->config.networks.emplace_back(networkName, ssid, password, channel,
                                        power, false);
   }
@@ -362,15 +363,15 @@ void ProjectConfig::deleteWifiConfig(const std::string& networkName,
                                      bool shouldNotify) {
   size_t size = this->config.networks.size();
   if (size == 0) {
-    Serial.println("No networks, nothing to delete");
+    GLOG_I("CFG", "No networks, nothing to delete");
   }
 
   for (auto it = this->config.networks.begin();
        it != this->config.networks.end();) {
     if (it->name == networkName) {
-      log_i("[Project Config]: Found network %s", it->name.c_str());
+      GLOG_I("CFG", "[Project Config]: Found network %s", it->name.c_str());
       it = this->config.networks.erase(it);
-      log_i("[Project Config]: Deleted network %s", networkName.c_str());
+      GLOG_I("CFG", "[Project Config]: Deleted network %s", networkName.c_str());
 
     } else {
       ++it;
@@ -385,7 +386,7 @@ void ProjectConfig::deleteWifiConfig(const std::string& networkName,
 
 void ProjectConfig::setWiFiTxPower(uint8_t power, bool shouldNotify) {
   this->config.txpower.power = power;
-  log_d("Updating wifi tx power");
+  GLOG_D("CFG", "Updating wifi tx power");
   if (shouldNotify)
     this->notifyAll(ConfigState_e::wifiTxPowerUpdated);
 }
@@ -400,7 +401,7 @@ void ProjectConfig::setAPWifiConfig(const std::string& ssid,
   this->config.ap_network.channel = channel;
   this->config.ap_network.adhoc = adhoc;
 
-  log_d("Updating access point config");
+  GLOG_D("CFG", "Updating access point config");
 
   if (shouldNotify) {
     wifiStateManager.setState(WiFiState_e::WiFiState_None);

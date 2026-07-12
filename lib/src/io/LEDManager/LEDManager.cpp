@@ -1,4 +1,5 @@
 #include "LEDManager.hpp"
+#include "data/utilities/log_manager.hpp"
 
 /**
  *! @brief This is declared as a static member of the class - therefor it must
@@ -66,7 +67,7 @@ void LEDManager::begin() {
   this->toggleLED(pattern.state);
   this->nextStateChangeMillis = pattern.delayTime;
 
-  log_d("begin %d", this->currentPatternIndex);
+  GLOG_D("LED", "begin %d", this->currentPatternIndex);
 }
 
 /**
@@ -96,7 +97,7 @@ void LEDManager::handleLED() {
                    nextState) != this->keepAliveStates.end()) ||
         (this->currentState != nextState &&
          this->ledStateMap.find(nextState) != this->ledStateMap.end())) {
-      log_d("Updating the state and reseting");
+      GLOG_D("LED", "Updating the state and resetting");
       this->toggleLED(false);
       this->currentState = nextState;
       this->currentPatternIndex = 0;
@@ -115,9 +116,9 @@ void LEDManager::handleLED() {
       this->ledStateMap[this->currentState][this->currentPatternIndex];
   this->toggleLED(pattern.state);
   this->nextStateChangeMillis = millis() + pattern.delayTime;
-  log_d("before updating stage %d", this->currentPatternIndex);
+  GLOG_D("LED", "before updating stage %d", this->currentPatternIndex);
   this->currentPatternIndex++;
-  log_d("updated stage %d", this->currentPatternIndex);
+  GLOG_D("LED", "updated stage %d", this->currentPatternIndex);
 }
 
 /**

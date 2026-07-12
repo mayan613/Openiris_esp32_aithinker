@@ -7,3 +7,5 @@
 docs
 docs/*
 logs
+
+.claude

@@ -3,6 +3,7 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include "data/utilities/log_manager.hpp"
 
 template <typename EnumT>
 class IObserver {
@@ -53,7 +54,7 @@ class ISubject {
       (*it_map).second->update(event);
       return;
     }
-    log_e("Invalid Map Index");
+    GLOG_E("OBS", "Invalid Map Index");
     return;
   }
 };

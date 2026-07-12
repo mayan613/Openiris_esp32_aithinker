@@ -1,4 +1,5 @@
 #include "CommandManager.hpp"
+#include "data/utilities/log_manager.hpp"
 
 CommandManager::CommandManager(ProjectConfig* deviceConfig)
     : deviceConfig(deviceConfig) {}
@@ -20,7 +21,7 @@ bool CommandManager::hasDataField(JsonVariant& command) {
 
 void CommandManager::handleCommands(CommandsPayload commandsPayload) {
   if (!commandsPayload.data["commands"].isNull()) {
-    log_e("Json data sent not supported, lacks commands field");
+    GLOG_E("CMD", "Json data sent not supported, lacks commands field");
     return;
   }
 
@@ -72,7 +73,7 @@ void CommandManager::handleCommand(JsonVariant command) {
       break;
     }
     case CommandType::PING: {
-      Serial.println("PONG \n\r");
+      GLOG_I("CMD", "PONG");
       break;
     }
     default:

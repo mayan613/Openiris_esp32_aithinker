@@ -5,6 +5,7 @@
 
 #include <data/CommandManager/CommandManager.hpp>
 #include <data/config/project_config.hpp>
+#include <data/utilities/log_manager.hpp>
 #include <io/LEDManager/LEDManager.hpp>
 #include <io/Serial/SerialManager.hpp>
 #include <io/camera/cameraHandler.hpp>

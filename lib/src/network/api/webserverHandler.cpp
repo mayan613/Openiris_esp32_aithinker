@@ -1,4 +1,5 @@
 #include "webserverHandler.hpp"
+#include "data/utilities/log_manager.hpp"
 
 //*********************************************************************************************
 //!                                     API Server
@@ -19,7 +20,7 @@ APIServer::APIServer(ProjectConfig& projectConfig,
 APIServer::~APIServer() {}
 
 void APIServer::setup() {
-  Serial.printf("初始化REST API服务器\n");
+  GLOG_I("API", "Initializing REST API server");
   this->setupServer();
   BaseAPI::begin();
 
@@ -27,7 +28,7 @@ void APIServer::setup() {
   snprintf(buffer, sizeof(buffer),
            "^\\%s\\/([a-zA-Z0-9]+)\\/command\\/([a-zA-Z0-9]+)$",
            this->api_url.c_str());
-  Serial.printf("API URL: %s\n", buffer);
+  GLOG_I("API", "API URL: %s", buffer);
   server.on(buffer, 0b01111111, [&](AsyncWebServerRequest* request) {
       handleRequest(request);
   });
@@ -87,28 +88,28 @@ void APIServer::addRouteMap(const std::string& index,
 void APIServer::handleRequest(AsyncWebServerRequest* request) {
   try {
     // Get the route
-    log_i("Request URL: %s", request->url().c_str());
-    log_i("Request: %s", request->pathArg(0).c_str());
-    log_i("Request: %s", request->pathArg(1).c_str());
+    GLOG_I("API", "Request URL: %s", request->url().c_str());
+    GLOG_I("API", "Request: %s", request->pathArg(0).c_str());
+    GLOG_I("API", "Request: %s", request->pathArg(1).c_str());
 
     auto it_map = route_map.find(request->pathArg(0).c_str());
     auto it_method = it_map->second.find(request->pathArg(1).c_str());
 
     if (it_map != route_map.end()) {
       if (it_method != it_map->second.end()) {
-        log_d("We are trying to execute the function");
+        GLOG_D("API", "We are trying to execute the function");
         (*this.*(it_method->second))(request);
       } else {
-        log_e("Invalid Command");
+        GLOG_E("API", "Invalid Command");
         request->send(400, MIMETYPE_JSON, "{\"msg\":\"Invalid Command\"}");
         return;
       }
     } else {
-      log_e("Invalid Map Index");
+      GLOG_E("API", "Invalid Map Index");
       request->send(400, MIMETYPE_JSON, "{\"msg\":\"Invalid Map Index\"}");
       return;
     }
   } catch (...) {
-    log_e("Error handling request");
+    GLOG_E("API", "Error handling request");
   }
 }
