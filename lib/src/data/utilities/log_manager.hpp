@@ -9,7 +9,7 @@
 // ================================================
 //  统一日志管理器 — GLogManager
 //  一次调用 → 串口 + Web SSE 双输出
-//  替代原来分散的 Serial.printf / log_i / SendLogToWeb 三套体系
+//  替代原来分散的 Serial.printf / log_i 体系
 // ================================================
 
 enum class GLogLevel {
@@ -55,7 +55,7 @@ class GLogManager {
 };
 
 // ================================================
-//  便捷宏 — 替换原来的 log_i / log_d / log_e / Serial.printf / SendLogToWeb
+//  便捷宏 — 替代原来的 log_i / log_d / log_e / Serial.printf
 // ================================================
 
 // 带标签的日志（推荐用于 lib/ 中各模块）

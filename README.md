@@ -96,26 +96,26 @@ http://设备IP:8080
 - 配置管理页面端口：**8080**
 - Web 日志监控页面端口：**1234**
 - AP 热点名称和密码可在 `main.cpp` 顶部修改
-- 目前日志回调功能仍在优化中，推荐使用 `sendLogToWeb()` 发送自定义调试日志
+- **更新说明（v3.3.0）**：
+  - 日志系统已重构为统一的 GLogManager + GLOG 宏，不再需要手动调用 `SendLogToWeb()`。
 
 ---
 
 ## 待办事项（TODO）
 
-- ~~完善日志回调系统（解决 `Serial.available()` 一直为 0 的问题~~  `已经重构日志系统.`
-- 添加日志级别颜色区分(DEBUG / INFO / ERROR) `正在解决此问题...`
-- 修复对除AiThinker系列以外ESP32开发板的兼容问题
+- ~~完善日志回调系统（解决 Serial.available() 一直为 0 的问题）~~  `v3.3 已通过 GLogManager + GLOG 宏重构整个日志系统`
+- ~~添加日志级别过滤~~  `v3.3 已实现：LOG_LEVEL 全局控制，四级可调`
+- 添加日志级别颜色区分（DEBUG / INFO / ERROR） `正在实现本功能..`
+- 修复对除 AiThinker 系列以外 ESP32 开发板的兼容问题
 - 支持网页端扫描附近 WiFi 列表
-- OTA 更新时暂停日志推送，避免冲突
-- 添加暗黑模式支持
 - 优化内存占用
+- 添加暗黑模式支持
 
 ---
 
 ## 项目说明
 
 - 基于 OpenIris 项目二次开发
-- 主要修改文件：`main.cpp`、`SerialManager.cpp`、`html_content.h`、`streamServer.cpp`
 - 配置信息保存在 NVS 中，重启后依然有效
 
 ---
@@ -124,3 +124,7 @@ http://设备IP:8080
 
 如有问题或建议，欢迎在 Issues 中提出。
 
+---
+
+## 许可证:
+本项目基于 MIT 许可证开源。
